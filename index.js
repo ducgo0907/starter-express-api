@@ -1,7 +1,33 @@
-const express = require('express')
-const app = express()
-app.all('/', (req, res) => {
-    console.log("Just got a request!")
-    res.send('Yo!')
+const express = require('express');
+const http = require("http");
+
+var app = express();
+const sever = http.createServer(app);
+
+const socketIo = require("socket.io")(sever, {
+	cors: {
+		origin: "*",
+	}
 })
-app.listen(process.env.PORT || 3000)
+
+app.use("/", (req, res) => {
+	return res.status(200).json("Hello 12");
+})
+
+socketIo.on("connection", (socket) => {
+	console.log("New client connected", socket.id);
+
+	socket.emit("getId", socket.id);
+
+	socket.on("sendDataClient", function (data) {
+		socketIo.emit("sendDataSever", { data });
+	})
+
+	socket.on("disconnect", () => {
+		console.log("Client disconnected");
+	});
+});
+
+sever.listen(3000, () => {
+	console.log(`Sever is running on port: 3000`);
+})
